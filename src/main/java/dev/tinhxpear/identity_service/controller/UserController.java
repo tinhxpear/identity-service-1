@@ -8,7 +8,9 @@ import dev.tinhxpear.identity_service.entity.User;
 import dev.tinhxpear.identity_service.service.UserService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,21 +18,26 @@ import java.util.List;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/users")
+@Slf4j
 public class UserController {
 
     @Autowired
     private UserService userService;
 
     @PostMapping
-    public ApiResponse<User> createUser(@RequestBody @Valid UserCreationRequest request) {
-        ApiResponse<User> apiResponse = new ApiResponse<>();
+    public ApiResponse<UserResponse> createUser(@RequestBody @Valid UserCreationRequest request) {
+        ApiResponse<UserResponse> apiResponse = new ApiResponse<>();
         apiResponse.setCode(1000);
         apiResponse.setResult(userService.createUser(request));
         return apiResponse;
     }
 
     @GetMapping
-    public List<User> getUsers() {
+    public List<UserResponse> getUsers() {
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        log.info("Username: {}", authentication.getName());
+        authentication.getAuthorities().forEach(grantedAuthority -> log.info(grantedAuthority.getAuthority()));
         return userService.getUsers();
     }
 
