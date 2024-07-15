@@ -13,12 +13,16 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -41,12 +45,19 @@ public class UserService {
         User userSave = userRepository.save(user);
         return userMapper.toUserResponse(userSave);
     }
+    //@PostAuthorize() , This annotation has the effect that after the function is called, it will check the role.
+    // If the role  is satisfied, the result will be returned, otherwise it will stop.
 
+    // This annotation will check the role first, if the role is satisfied, run the function,otherwise stop.
+    // More commonly used
+    @PreAuthorize("hasRole('ADMIN')")
     public List<UserResponse> getUsers(){
         return userRepository.findAll().stream()
                 .map(userMapper::toUserResponse).toList();
     }
 
+    // Only logged in users can access
+    @PostAuthorize("returnObject.username == authentication.name")
     public UserResponse getUserById(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -62,5 +73,16 @@ public class UserService {
 
     public void deleteUserById(String userId) {
         userRepository.deleteById(userId);
+    }
+
+    public UserResponse getMyInfo() {
+
+        // Get information of user login
+        var context = SecurityContextHolder.getContext();
+        String name = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(name).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        return userMapper.toUserResponse(user);
     }
 }
