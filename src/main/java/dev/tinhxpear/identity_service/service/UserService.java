@@ -56,7 +56,7 @@ public class UserService {
                 .map(userMapper::toUserResponse).toList();
     }
 
-    // Only logged in users can access
+    // Only logged_in users can access
     @PostAuthorize("returnObject.username == authentication.name")
     public UserResponse getUserById(String userId) {
         User user = userRepository.findById(userId)
